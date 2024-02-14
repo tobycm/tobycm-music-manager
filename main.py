@@ -14,10 +14,12 @@ if not KEY:
 
 url = "https://youtube.googleapis.com/youtube/v3/playlistItems?playlistId=&part=contentDetails&maxResults=50&key="
 
-music_dir = "D:/RandomStuff/ytdl-stuff/toby-my-music/"
-yt_dlp_exe = "yt-dlp"
+music_dir = os.getenv("MUSIC_DIR", "~/Music/")
+yt_dlp_exe = os.getenv("YT_DLP_EXE", "yt-dlp")
 
-video_ids = get_playlist_items("PLSQmKW3jS_HRPnGo1cv9W6IH7Z_-3oAn_", KEY)
+playlist_id = os.getenv("PLAYLIST_ID", "PLSQmKW3jS_HRPnGo1cv9W6IH7Z_-3oAn_")
+
+video_ids = get_playlist_items(playlist_id, KEY)
 if not video_ids:
     raise ValueError("No video ids found")
 
