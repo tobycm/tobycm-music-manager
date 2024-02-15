@@ -14,7 +14,7 @@ if not KEY:
 
 url = "https://youtube.googleapis.com/youtube/v3/playlistItems?playlistId=&part=contentDetails&maxResults=50&key="
 
-music_dir = os.getenv("MUSIC_DIR", "~/Music/")
+music_dir = os.getenv("OUTPUT_DIR", "~/Music/")
 yt_dlp_exe = os.getenv("YT_DLP_EXE", "yt-dlp")
 
 playlist_id = os.getenv("PLAYLIST_ID", "PLSQmKW3jS_HRPnGo1cv9W6IH7Z_-3oAn_")
