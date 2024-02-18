@@ -4,6 +4,8 @@ runme:
   version: v3
 ---
 
+use [runme.dev](runme.dev) for the best experience with this readme xd
+
 # [Happy Coding Music](https://www.youtube.com/playlist?list=PLSQmKW3jS_HRPnGo1cv9W6IH7Z_-3oAn_) Manager
 
 ## Prerequisites
