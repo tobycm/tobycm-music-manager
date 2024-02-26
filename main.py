@@ -22,17 +22,22 @@ playlist_id = os.getenv("PLAYLIST_ID", "PLSQmKW3jS_HRPnGo1cv9W6IH7Z_-3oAn_")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    
-    parser.add_argument("playlist_id", help="Playlist ID", default=playlist_id)
-    parser.add_argument("output_dir", help="Output directory", default="~/Music/")
-    parser.add_argument("yt_dlp_exe", help="yt-dlp executable", default="yt-dlp")
+
+    parser.add_argument("--playlist_id",
+                        help="Playlist ID",
+                        default=playlist_id)
+    parser.add_argument("output_dir",
+                        help="Output directory",
+                        default="~/Music/")
+    parser.add_argument("--yt_dlp_exe",
+                        help="yt-dlp executable",
+                        default="yt-dlp")
 
     args = parser.parse_args()
-    
+
     playlist_id = args.playlist_id
     music_dir = args.output_dir
-    yt_dlp_exe = args.yt_dlp_exe    
-    
+    yt_dlp_exe = args.yt_dlp_exe
 
 video_ids = get_playlist_items(playlist_id, KEY)
 if not video_ids:
