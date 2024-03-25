@@ -20,6 +20,8 @@ yt_dlp_exe = os.getenv("YT_DLP_EXE", "yt-dlp")
 
 playlist_id = os.getenv("PLAYLIST_ID", "PLSQmKW3jS_HRPnGo1cv9W6IH7Z_-3oAn_")
 
+bypass_already_downloaded = os.getenv("BYPASS_ALREADY_DOWNLOADED", "false").lower() == "true"
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -32,12 +34,16 @@ if __name__ == "__main__":
     parser.add_argument("--yt_dlp_exe",
                         help="yt-dlp executable",
                         default="yt-dlp")
+    parser.add_argument("--no-check-downloaded",
+                        help="Bypass already downloaded videos",
+                        action="store_true")
 
     args = parser.parse_args()
 
     playlist_id = args.playlist_id
     music_dir = args.output_dir
     yt_dlp_exe = args.yt_dlp_exe
+    bypass_already_downloaded = args.no_check_downloaded
 
 video_ids = get_playlist_items(playlist_id, KEY)
 if not video_ids:
@@ -49,12 +55,19 @@ with open("ids.txt", "a") as f:  # create file if it doesn't exist
 with open("ids.txt", "r") as f:
     ids = f.read().splitlines()
 
-if len(ids) != len(video_ids):
+if bypass_already_downloaded or len(ids) != len(video_ids):
     # new or removed videos
     need_to_download = filter_videos(video_ids, music_dir)
+    if bypass_already_downloaded:
+        need_to_download = video_ids
+
+    if len(need_to_download) == 0:
+        print("No new videos found")
 
     # Download
-    for id in need_to_download:
+    for index, id in enumerate(need_to_download):
+        print(f"Downloading {index + 1}/{len(need_to_download)}")
+        
         subprocess.run([
             yt_dlp_exe,
             "-x",
@@ -62,6 +75,8 @@ if len(ids) != len(video_ids):
             "mp3",
             "--format",
             "ba",
+            "--embed-metadata",
+            "--embed-thumbnail",
             f"https://www.youtube.com/watch?v={id}",
             "-o",
             f"{music_dir}%(title)s [%(id)s].%(ext)s",
