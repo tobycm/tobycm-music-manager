@@ -25,6 +25,8 @@ playlist_id = os.getenv("PLAYLIST_ID", "PLSQmKW3jS_HRPnGo1cv9W6IH7Z_-3oAn_")
 bypass_already_downloaded = os.getenv("BYPASS_ALREADY_DOWNLOADED",
                                       "false").lower() == "true"
 
+no_subtitle = os.getenv("NO_SUBTITLE", "false").lower() == "true"
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--playlist-id", help="Playlist ID", default=playlist_id)
@@ -33,6 +35,9 @@ parser.add_argument("--nsub-exe", help="nsub executable", default=nsub_exe)
 parser.add_argument("--no-check-downloaded",
                     help="Bypass already downloaded videos",
                     action="store_true")
+parser.add_argument("--no-subtitle",
+                    help="Don't download subtitles",
+                    action="store_true")
 
 args = parser.parse_args()
 
@@ -40,6 +45,7 @@ playlist_id = args.playlist_id
 output_dir = args.output_dir
 nsub_exe = args.nsub_exe
 bypass_already_downloaded = args.no_check_downloaded
+no_subtitle = args.no_subtitle
 
 ytdlp_opts = {
     'ignoreerrors':
@@ -73,13 +79,15 @@ ytdlp_opts = {
             '-c:v', 'png', '-vf',
             'pad=iw:max(iw\\,ih):(ow-iw)/2:(oh-ih)/2:color=0x000000,scale=max(iw\\,ih):max(iw\\,ih)'
         ]
-    },
-    'subtitleslangs': ['all'],
-    'subtitlesformat':
-    'vtt',
-    'writesubtitles':
-    True
+    }
 }
+
+if not no_subtitle:
+    ytdlp_opts.update({
+        'subtitleslangs': ['all'],
+        'subtitlesformat': 'vtt',
+        'writesubtitles': True
+    })
 
 video_ids = get_playlist_items(playlist_id, KEY)
 if not video_ids:
@@ -105,7 +113,8 @@ if bypass_already_downloaded or len(ids) != len(video_ids):
     print(f"Downloading {len(need_to_download)} songs...")
 
     with yt_dlp.YoutubeDL(ytdlp_opts) as ydl:
-        ydl.add_post_processor(AddLyricsPP(nsub_exe))
+        if not no_subtitle:
+            ydl.add_post_processor(AddLyricsPP(nsub_exe))
         ydl.download(need_to_download)
 
     with open("ids.txt", "w") as f:  # save new ids

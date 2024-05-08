@@ -4,7 +4,8 @@ from os.path import isfile, join
 
 
 def filter_videos(videos_ids: list[str],
-                  music_dir: str = "/home/pi/toby-my-music/") -> list[str]:
+                  music_dir: str = "/home/pi/toby-my-music/",
+                  no_subtitle: bool = True) -> list[str]:
     onlyfiles = [
         file for file in listdir(music_dir) if isfile(join(music_dir, file))
     ]
@@ -14,6 +15,11 @@ def filter_videos(videos_ids: list[str],
         for id in videos_ids:
             if id not in file:
                 continue
+
+            if no_subtitle:
+                downloaded = True
+                break
+
             if "mp3" in file:
                 downloaded = True
                 break
@@ -41,6 +47,11 @@ def filter_videos(videos_ids: list[str],
         for file in onlyfiles:
             if id not in file:
                 continue
+
+            if no_subtitle:
+                downloaded = True
+                break
+
             if "mp3" in file:
                 downloaded = True
                 break
