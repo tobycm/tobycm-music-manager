@@ -27,7 +27,7 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
         lrc_subtitle_file = ".".join(lrc_subtitle_file)
 
         subprocess.run([
-            self.nsub_path, "-f", "srt", "-t", "lrc",
+            self.nsub_path, "-f", "vtt", "-t", "lrc",
             subtitle_file.replace("\\", "/"),
             lrc_subtitle_file.replace("\\", "/")
         ])
@@ -46,14 +46,14 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
 
         mp3.tag.save()
 
-        srt_subtitle_file = subtitle_file.split(".")
-        srt_subtitle_file[-1] = "srt"
-        srt_subtitle_file = ".".join(srt_subtitle_file)
+        # srt_subtitle_file = subtitle_file.split(".")
+        # srt_subtitle_file[-1] = "srt"
+        # srt_subtitle_file = ".".join(srt_subtitle_file)
 
-        subprocess.run([
-            self.nsub_path, "-f", "vtt", "-t", "srt",
-            subtitle_file.replace("\\", "/"),
-            srt_subtitle_file.replace("\\", "/")
-        ])
+        # subprocess.run([
+        #     self.nsub_path, "-f", "vtt", "-t", "srt",
+        #     subtitle_file.replace("\\", "/"),
+        #     srt_subtitle_file.replace("\\", "/")
+        # ])
 
         return [subtitle_file, lrc_subtitle_file], info
