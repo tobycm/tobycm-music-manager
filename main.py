@@ -42,6 +42,8 @@ nsub_exe = args.nsub_exe
 bypass_already_downloaded = args.no_check_downloaded
 
 ytdlp_opts = {
+    'ignoreerrors':
+    True,
     'format':
     'ba',
     'outtmpl': {
