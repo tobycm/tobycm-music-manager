@@ -161,3 +161,7 @@ cython_debug/
 
 # cache youtube ids
 ids.txt
+
+bin/*
+!bin/nsub.windows.exe
+!bin/nsub.linux

@@ -12,7 +12,14 @@ use [runme.dev](https://runme.dev) for the best experience with this readme xd
 
 ```sh {"id":"01HPYZ4JQQJW20ANETRMWTJZP1"}
 pip install -U -r requirements.txt
+
 ```
+
+NSub: Compile [https://github.com/tobycm/nsub-windows](https://github.com/tobycm/nsub-windows) or [https://github.com/nikiroo/nsub](https://github.com/nikiroo/nsub) if you are on Linux
+
+Put the binaries in bin folder named as `nsub` or `nsub.exe` (required on Windows)
+
+If you don't want to compile, you can rename `nsub.windows.exe` to `nsub.exe` or `nsub.linux` to `nsub` in `bin` folder
 
 ## How to use
 
@@ -26,18 +33,21 @@ pip install -U -r requirements.txt
 
 ```sh {"id":"01HPYZDSY7HW0N587WWDW9N2Z5"}
 cp .example.env .env
+
 ```
 
 2. Add values to `.env`
 
 ```sh {"id":"01HPYZF5Z2YAYYZANV0JS7QBM6"}
 nano .env
+
 ```
 
 3. Run `main.py`
 
 ```sh {"id":"01HPYZ7J74EMGT2DM1QK0AXT8J"}
 python main.py (playlist_id) (output_dir) (yt_dlp_exe)
+
 ```
 
 4. Wait :))))
@@ -48,4 +58,5 @@ python main.py (playlist_id) (output_dir) (yt_dlp_exe)
 
 ```sh {"id":"01HPYZHXF0EMTZDHW6G7RXDA05"}
 python replicate.py [src_folder] [dst_folder]
+
 ```

@@ -1,2 +1,4 @@
 python-dotenv
 requests
+eyed3
+yt-dlp

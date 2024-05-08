@@ -1,13 +1,16 @@
 import argparse
 import os
-import subprocess
 
 import dotenv
+import yt_dlp
 
+from modules.add_lyrics import AddLyricsPP
 from modules.fetch import get_playlist_items
 from modules.filter import filter_videos
 
 dotenv.load_dotenv()
+
+output_dir = os.getenv("OUTPUT_DIR", "~/Music/")
 
 KEY = os.getenv("YT_API_KEY")
 if not KEY:
@@ -15,8 +18,7 @@ if not KEY:
 
 url = "https://youtube.googleapis.com/youtube/v3/playlistItems?playlistId=&part=contentDetails&maxResults=50&key="
 
-music_dir = os.getenv("OUTPUT_DIR", "~/Music/")
-yt_dlp_exe = os.getenv("YT_DLP_EXE", "yt-dlp")
+nsub_exe = os.getenv("NSUB_EXE", "bin/nsub")
 
 playlist_id = os.getenv("PLAYLIST_ID", "PLSQmKW3jS_HRPnGo1cv9W6IH7Z_-3oAn_")
 
@@ -25,9 +27,9 @@ bypass_already_downloaded = os.getenv("BYPASS_ALREADY_DOWNLOADED",
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--playlist_id", help="Playlist ID", default=playlist_id)
-parser.add_argument("output_dir", help="Output directory", default="~/Music/")
-parser.add_argument("--yt_dlp_exe", help="yt-dlp executable", default="yt-dlp")
+parser.add_argument("--playlist-id", help="Playlist ID", default=playlist_id)
+parser.add_argument("output_dir", help="Output directory", default=output_dir)
+parser.add_argument("--nsub-exe", help="nsub executable", default=nsub_exe)
 parser.add_argument("--no-check-downloaded",
                     help="Bypass already downloaded videos",
                     action="store_true")
@@ -35,9 +37,47 @@ parser.add_argument("--no-check-downloaded",
 args = parser.parse_args()
 
 playlist_id = args.playlist_id
-music_dir = args.output_dir
-yt_dlp_exe = args.yt_dlp_exe
+output_dir = args.output_dir
+nsub_exe = args.nsub_exe
 bypass_already_downloaded = args.no_check_downloaded
+
+ytdlp_opts = {
+    'format':
+    'ba',
+    'outtmpl': {
+        'default': f'{output_dir}/%(title)s [%(id)s].%(ext)s',
+        'pl_thumbnail': ''
+    },
+    'writethumbnail':
+    True,
+    'final_ext':
+    'mp3',
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '5',
+        'nopostoverwrites': False
+    }, {
+        'key': 'FFmpegMetadata',
+        'add_chapters': True,
+        'add_metadata': True,
+        'add_infojson': 'if_exists'
+    }, {
+        'key': 'EmbedThumbnail',
+        'already_have_thumbnail': False
+    }],
+    'postprocessor_args': {
+        'embedthumbnail+ffmpeg_o': [
+            '-c:v', 'png', '-vf',
+            'pad=iw:max(iw\\,ih):(ow-iw)/2:(oh-ih)/2:color=0x000000,scale=max(iw\\,ih):max(iw\\,ih)'
+        ]
+    },
+    'subtitleslangs': ['all'],
+    'subtitlesformat':
+    'vtt',
+    'writesubtitles':
+    True
+}
 
 video_ids = get_playlist_items(playlist_id, KEY)
 if not video_ids:
@@ -51,32 +91,20 @@ with open("ids.txt", "r") as f:
 
 if bypass_already_downloaded or len(ids) != len(video_ids):
     # new or removed videos
-    need_to_download = filter_videos(video_ids, music_dir)
+    need_to_download = filter_videos(video_ids, output_dir)
     if bypass_already_downloaded:
         need_to_download = video_ids
 
     if len(need_to_download) == 0:
         print("No new videos found")
+        exit(0)
 
     # Download
-    for index, id in enumerate(need_to_download):
-        print(f"Downloading {index + 1}/{len(need_to_download)}")
+    print(f"Downloading {len(need_to_download)} songs...")
 
-        subprocess.run([
-            yt_dlp_exe,
-            "-x",
-            "--audio-format",
-            "mp3",
-            "--format",
-            "ba",
-            f"https://www.youtube.com/watch?v={id}",
-            "--embed-metadata",
-            "--embed-thumbnail",
-            "--ppa",
-            "EmbedThumbnail+ffmpeg_o:-c:v png -vf pad='iw:max(iw\\,ih):(ow-iw)/2:(oh-ih)/2:color=0x000000',scale='max(iw\\,ih):max(iw\\,ih)'",
-            "-o",
-            f"{music_dir}%(title)s [%(id)s].%(ext)s",
-        ])
+    with yt_dlp.YoutubeDL(ytdlp_opts) as ydl:
+        ydl.add_post_processor(AddLyricsPP(nsub_exe))
+        ydl.download(need_to_download)
 
     with open("ids.txt", "w") as f:  # save new ids
         f.write("\n".join(video_ids))
