@@ -11,15 +11,18 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
         super().__init__(downloader)
         self.nsub_path = nsub_path
 
-    def run(self, info):
-        filepath = info.get("filepath")
+    def run(self, info: dict):
+        self.to_screen("Trying to find subtitles from the video")
+
+        filepath: str = info.get("filepath")
 
         try:
-            subtitles = info.get("requested_subtitles")
-            subtitle_file = subtitles[next(iter(subtitles))].get("filepath")
-            print(f"Found subtitle file: {subtitle_file}")
-        except Exception as e:
-            print("No subtitles found")
+            subtitles: dict[str, dict[str,
+                                      str]] = info.get("requested_subtitles")
+            subtitle_file: str = next(subtitles.values()).get("filepath")
+            self.to_screen(f"Found subtitle file: {subtitle_file}")
+        except:
+            self.to_screen("No subtitles found")
             return [], info
 
         lrc_subtitle_file = subtitle_file.split(".")
@@ -45,6 +48,8 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
             mp3.tag.lyrics.set(f.read())
 
         mp3.tag.save()
+
+        self.to_screen("Subtitles added!")
 
         # srt_subtitle_file = subtitle_file.split(".")
         # srt_subtitle_file[-1] = "srt"

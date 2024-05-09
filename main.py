@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 
 import dotenv
 import yt_dlp
@@ -89,24 +90,36 @@ if not no_subtitle:
         'writesubtitles': True
     })
 
-video_ids = get_playlist_items(playlist_id, KEY)
-if not video_ids:
-    raise ValueError("No video ids found")
+playlist_video_ids = get_playlist_items(playlist_id, KEY)
+if not playlist_video_ids:
+    raise ValueError("No video ids found in playlist")
 
-with open("ids.txt", "a") as f:  # create file if it doesn't exist
+if not os.path.exists(".cache"):
+    os.mkdir(".cache")
+
+with open(".cache/playlist_video_ids.txt",
+          "a") as f:  # create file if it doesn't exist
     pass
 
-with open("ids.txt", "r") as f:
-    ids = f.read().splitlines()
+cached_video_ids = []
 
-if bypass_already_downloaded or len(ids) != len(video_ids):
+with open(".cache/playlist_video_ids.txt", "r") as f:
+    timestamp = int(f.readline().strip("Timestamp: "))
+    if time.time() - timestamp < 86400:  # 1 day
+        print("1 day passed since last fetch, cache invalidated")
+    else:
+        cached_video_ids = f.read().splitlines()
+
+if bypass_already_downloaded or len(cached_video_ids) != len(
+        playlist_video_ids):
+
+    need_to_download = playlist_video_ids
     # new or removed videos
-    need_to_download = filter_videos(video_ids, output_dir)
-    if bypass_already_downloaded:
-        need_to_download = video_ids
+    if not bypass_already_downloaded:
+        need_to_download = filter_videos(playlist_video_ids, output_dir)
 
     if len(need_to_download) == 0:
-        print("No new videos found")
+        print("No new videos to download")
         exit(0)
 
     # Download
@@ -117,7 +130,7 @@ if bypass_already_downloaded or len(ids) != len(video_ids):
             ydl.add_post_processor(AddLyricsPP(nsub_exe))
         ydl.download(need_to_download)
 
-    with open("ids.txt", "w") as f:  # save new ids
-        f.write("\n".join(video_ids))
+    with open(".cache/playlist_video_ids.txt", "w") as f:  # save new ids
+        f.write("\n".join(playlist_video_ids))
 
     # subprocess.run(["sudo", "reboot"])
