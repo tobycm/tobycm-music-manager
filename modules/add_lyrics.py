@@ -43,6 +43,12 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
 
         lrc = "[offset: +0]\n"
 
+        vtt = webvtt.read(subtitle_file)
+        captions = vtt.captions
+
+        for treatment in SpecialTreatments.get_treatment(info.get("id")):
+            captions = treatment(captions)
+
         for caption in webvtt.read(subtitle_file):
             caption.text = caption.text.replace("\n", "")
             lrc += f"[{caption.start}]{caption.text}\n"
@@ -63,3 +69,27 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
         self.to_screen("Subtitles added!")
 
         return [subtitle_file], info
+
+
+class SpecialTreatments:
+    deduplicate_ids = ["6bnaBnd4kyU"]
+
+    @staticmethod
+    def deduplicate(captions: list) -> list:
+        texts = []
+        new_captions = []
+        for caption in captions:
+            if caption.text in texts:
+                continue
+
+            new_captions.append(caption)
+            texts.append(caption.text)
+
+        return new_captions
+
+    @staticmethod
+    def get_treatment(video_id: str) -> list:
+        if video_id in SpecialTreatments.deduplicate_ids:
+            return [SpecialTreatments.deduplicate]
+
+        return []
