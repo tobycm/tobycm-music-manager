@@ -134,7 +134,7 @@ if bypass_already_downloaded or len(cached_video_ids) != len(
         ydl.download(need_to_download)
 
     with open(".cache/playlist_video_ids.txt", "w") as f:  # save new ids
-        f.write(f"Timestamp: {int(time.time())}")
+        f.write(f"Timestamp: {int(time.time())}\n")
         f.write("\n".join(playlist_video_ids))
 
     # subprocess.run(["sudo", "reboot"])

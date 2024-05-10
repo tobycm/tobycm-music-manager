@@ -44,6 +44,7 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
         lrc = "[offset: +0]\n"
 
         for caption in webvtt.read(subtitle_file):
+            caption.text = caption.text.replace("\n", "")
             lrc += f"[{caption.start}]{caption.text}\n"
 
         mp3 = eyed3.load(filepath)
