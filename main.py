@@ -85,7 +85,7 @@ ytdlp_opts = {
 
 if not no_subtitle:
     ytdlp_opts.update({
-        'subtitleslangs': ['all'],
+        'subtitleslangs': ['en'],
         'subtitlesformat': 'vtt',
         'writesubtitles': True
     })
@@ -104,7 +104,10 @@ with open(".cache/playlist_video_ids.txt",
 cached_video_ids = []
 
 with open(".cache/playlist_video_ids.txt", "r") as f:
-    timestamp = int(f.readline().strip("Timestamp: "))
+    try:
+        timestamp = int(f.readline().strip("Timestamp: "))
+    except ValueError:
+        timestamp = 0
     if time.time() - timestamp < 86400:  # 1 day
         print("1 day passed since last fetch, cache invalidated")
     else:
@@ -131,6 +134,7 @@ if bypass_already_downloaded or len(cached_video_ids) != len(
         ydl.download(need_to_download)
 
     with open(".cache/playlist_video_ids.txt", "w") as f:  # save new ids
+        f.write(f"Timestamp: {int(time.time())}")
         f.write("\n".join(playlist_video_ids))
 
     # subprocess.run(["sudo", "reboot"])
