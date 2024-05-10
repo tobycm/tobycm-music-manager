@@ -161,7 +161,3 @@ cython_debug/
 
 # cache
 .cache
-
-bin/*
-!bin/nsub.windows.exe
-!bin/nsub.linux

@@ -15,12 +15,6 @@ pip install -U -r requirements.txt
 
 ```
 
-NSub: Compile [https://github.com/tobycm/nsub-windows](https://github.com/tobycm/nsub-windows) or [https://github.com/nikiroo/nsub](https://github.com/nikiroo/nsub) if you are on Linux
-
-Put the binaries in bin folder named as `nsub` or `nsub.exe` (required on Windows)
-
-If you don't want to compile, you can rename `nsub.windows.exe` to `nsub.exe` or `nsub.linux` to `nsub` in `bin` folder
-
 ## How to use
 
 `[]` are mandatory arguments

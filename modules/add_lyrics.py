@@ -1,7 +1,10 @@
-import subprocess
-
 import eyed3
+import webvtt
 import yt_dlp
+
+
+class NoSubtitles(Exception):
+    pass
 
 
 class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
@@ -17,23 +20,31 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
         filepath: str = info.get("filepath")
 
         try:
-            subtitles: dict[str, dict[str,
-                                      str]] = info.get("requested_subtitles")
-            subtitle_file: str = next(subtitles.values()).get("filepath")
+            # ew wtf is this formatting
+            subtitles: dict[str,
+                            dict[str,
+                                 str]] | None = info.get("requested_subtitles")
+            if subtitles is None:
+                raise NoSubtitles
+
+            subtitle_file: str | None = next(iter(
+                subtitles.values())).get("filepath")
+
+            if subtitle_file is None:
+                raise NoSubtitles
+
             self.to_screen(f"Found subtitle file: {subtitle_file}")
-        except:
+        except (NoSubtitles, StopIteration):
             self.to_screen("No subtitles found")
             return [], info
+        except Exception as e:
+            self.to_screen(f"Error while getting subtitles. Error {e}")
+            return [], info
 
-        lrc_subtitle_file = subtitle_file.split(".")
-        lrc_subtitle_file[-1] = "lrc"
-        lrc_subtitle_file = ".".join(lrc_subtitle_file)
+        lrc = "[offset: +0]\n"
 
-        subprocess.run([
-            self.nsub_path, "-f", "vtt", "-t", "lrc",
-            subtitle_file.replace("\\", "/"),
-            lrc_subtitle_file.replace("\\", "/")
-        ])
+        for caption in webvtt.read(subtitle_file):
+            lrc += f"[{caption.start}]{caption.text}\n"
 
         mp3 = eyed3.load(filepath)
         if mp3 is None:
@@ -44,21 +55,10 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
 
         assert mp3.tag is not None
 
-        with open(lrc_subtitle_file, "r") as f:
-            mp3.tag.lyrics.set(f.read())
+        mp3.tag.lyrics.set(lrc)
 
         mp3.tag.save()
 
         self.to_screen("Subtitles added!")
 
-        # srt_subtitle_file = subtitle_file.split(".")
-        # srt_subtitle_file[-1] = "srt"
-        # srt_subtitle_file = ".".join(srt_subtitle_file)
-
-        # subprocess.run([
-        #     self.nsub_path, "-f", "vtt", "-t", "srt",
-        #     subtitle_file.replace("\\", "/"),
-        #     srt_subtitle_file.replace("\\", "/")
-        # ])
-
-        return [subtitle_file, lrc_subtitle_file], info
+        return [subtitle_file], info
