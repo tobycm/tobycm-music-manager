@@ -27,14 +27,17 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
 
             en_sub = subtitles.get("en")
             vi_sub = subtitles.get("vi")
+            jp_sub = subtitles.get("jp")
 
-            if not en_sub and not vi_sub:
+            if not en_sub and not vi_sub and not jp_sub:
                 raise NoSubtitles
 
             if en_sub:
                 subs.append(("eng", en_sub.get("filepath")))
             if vi_sub:
                 subs.append(("vie", vi_sub.get("filepath")))
+            if jp_sub:
+                subs.append(("jap", jp_sub.get("filepath")))
 
             self.to_screen(f"Found subtitle files: {[sub[1] for sub in subs]}")
         except (NoSubtitles, StopIteration):
@@ -63,8 +66,7 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
             vtt = webvtt.read(sub_file)
             captions = vtt.captions
 
-            for treatment in SpecialTreatments.get_treatment(info.get("id")):
-                captions = treatment(captions)
+            captions = SpecialTreatments.deduplicate(captions)
 
             for caption in captions:
                 caption.text = caption.text.replace("\n", "")
@@ -86,24 +88,16 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
 
 
 class SpecialTreatments:
-    deduplicate_ids = ["6bnaBnd4kyU"]
 
     @staticmethod
     def deduplicate(captions: list) -> list:
         texts = []
         new_captions = []
         for caption in captions:
-            if caption.text in texts:
+            if len(texts) != 0 and caption.text == texts[-1]:
                 continue
 
             new_captions.append(caption)
             texts.append(caption.text)
 
         return new_captions
-
-    @staticmethod
-    def get_treatment(video_id: str) -> list:
-        if video_id in SpecialTreatments.deduplicate_ids:
-            return [SpecialTreatments.deduplicate]
-
-        return []

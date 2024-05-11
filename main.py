@@ -7,7 +7,7 @@ import yt_dlp
 
 from modules.add_lyrics import AddLyricsPP
 from modules.fetch import get_playlist_items
-from modules.filter import filter_mp3
+from modules.filter import filter_videos
 
 dotenv.load_dotenv()
 
@@ -81,7 +81,7 @@ ytdlp_opts = {
 
 if not no_subtitle:
     ytdlp_opts.update({
-        'subtitleslangs': ['en', 'vi'],
+        'subtitleslangs': ['en', 'vi', 'jp'],
         'subtitlesformat': 'vtt',
         'writesubtitles': True
     })

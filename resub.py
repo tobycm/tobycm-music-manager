@@ -53,7 +53,7 @@ ytdlp_opts = {
             'pad=iw:max(iw\\,ih):(ow-iw)/2:(oh-ih)/2:color=0x000000,scale=max(iw\\,ih):max(iw\\,ih)'
         ]
     },
-    'subtitleslangs': ['en', 'vi'],
+    'subtitleslangs': ['en', 'vi', 'jp'],
     'subtitlesformat':
     'vtt',
     'writesubtitles':
