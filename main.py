@@ -7,7 +7,7 @@ import yt_dlp
 
 from modules.add_lyrics import AddLyricsPP
 from modules.fetch import get_playlist_items
-from modules.filter import filter_videos
+from modules.filter import filter_mp3
 
 dotenv.load_dotenv()
 
@@ -18,8 +18,6 @@ if not KEY:
     raise ValueError("YT_API_KEY not found in .env or environment variables")
 
 url = "https://youtube.googleapis.com/youtube/v3/playlistItems?playlistId=&part=contentDetails&maxResults=50&key="
-
-nsub_exe = os.getenv("NSUB_EXE", "bin/nsub")
 
 playlist_id = os.getenv("PLAYLIST_ID", "PLSQmKW3jS_HRPnGo1cv9W6IH7Z_-3oAn_")
 
@@ -32,7 +30,6 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--playlist-id", help="Playlist ID", default=playlist_id)
 parser.add_argument("output_dir", help="Output directory", default=output_dir)
-parser.add_argument("--nsub-exe", help="nsub executable", default=nsub_exe)
 parser.add_argument("--no-check-downloaded",
                     help="Bypass already downloaded videos",
                     action="store_true")
@@ -44,7 +41,6 @@ args = parser.parse_args()
 
 playlist_id = args.playlist_id
 output_dir = args.output_dir
-nsub_exe = args.nsub_exe
 bypass_already_downloaded = args.no_check_downloaded
 no_subtitle = args.no_subtitle
 
@@ -85,7 +81,7 @@ ytdlp_opts = {
 
 if not no_subtitle:
     ytdlp_opts.update({
-        'subtitleslangs': ['en'],
+        'subtitleslangs': ['en', 'vi'],
         'subtitlesformat': 'vtt',
         'writesubtitles': True
     })
@@ -108,7 +104,7 @@ with open(".cache/playlist_video_ids.txt", "r") as f:
         timestamp = int(f.readline().strip("Timestamp: "))
     except ValueError:
         timestamp = 0
-    if time.time() - timestamp < 86400:  # 1 day
+    if time.time() - timestamp > 86400:  # 1 day
         print("1 day passed since last fetch, cache invalidated")
     else:
         cached_video_ids = f.read().splitlines()
@@ -119,7 +115,7 @@ if bypass_already_downloaded or len(cached_video_ids) != len(
     need_to_download = playlist_video_ids
     # new or removed videos
     if not bypass_already_downloaded:
-        need_to_download = filter_videos(playlist_video_ids, output_dir)
+        need_to_download = filter_mp3(playlist_video_ids, output_dir)
 
     if len(need_to_download) == 0:
         print("No new videos to download")
@@ -130,7 +126,7 @@ if bypass_already_downloaded or len(cached_video_ids) != len(
 
     with yt_dlp.YoutubeDL(ytdlp_opts) as ydl:
         if not no_subtitle:
-            ydl.add_post_processor(AddLyricsPP(nsub_exe))
+            ydl.add_post_processor(AddLyricsPP())
         ydl.download(need_to_download)
 
     with open(".cache/playlist_video_ids.txt", "w") as f:  # save new ids

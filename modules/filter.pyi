@@ -1,3 +1,3 @@
-def filter_videos(videos_ids: list[str],
-                  music_dir: str = "/home/pi/toby-my-music/") -> list[str]:
+def filter_mp3(videos_ids: list[str],
+               music_dir: str = "/home/pi/toby-my-music/") -> list[str]:
     ...

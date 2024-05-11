@@ -8,16 +8,14 @@ class NoSubtitles(Exception):
 
 
 class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
-    nsub_path: str
 
-    def __init__(self, nsub_path: str = "bin/nsub", downloader=None):
+    def __init__(self, downloader=None):
         super().__init__(downloader)
-        self.nsub_path = nsub_path
 
     def run(self, info: dict):
         self.to_screen("Trying to find subtitles from the video")
 
-        filepath: str = info.get("filepath")
+        subs: list[tuple[str, str]] = []  # list[(lang, filepath)]
 
         try:
             # ew wtf is this formatting
@@ -27,13 +25,18 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
             if subtitles is None:
                 raise NoSubtitles
 
-            subtitle_file: str | None = next(iter(
-                subtitles.values())).get("filepath")
+            en_sub = subtitles.get("en")
+            vi_sub = subtitles.get("vi")
 
-            if subtitle_file is None:
+            if not en_sub and not vi_sub:
                 raise NoSubtitles
 
-            self.to_screen(f"Found subtitle file: {subtitle_file}")
+            if en_sub:
+                subs.append(("eng", en_sub.get("filepath")))
+            if vi_sub:
+                subs.append(("vie", vi_sub.get("filepath")))
+
+            self.to_screen(f"Found subtitle files: {[sub[1] for sub in subs]}")
         except (NoSubtitles, StopIteration):
             self.to_screen("No subtitles found")
             return [], info
@@ -41,19 +44,8 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
             self.to_screen(f"Error while getting subtitles. Error {e}")
             return [], info
 
-        lrc = "[offset: +0]\n"
-
-        vtt = webvtt.read(subtitle_file)
-        captions = vtt.captions
-
-        for treatment in SpecialTreatments.get_treatment(info.get("id")):
-            captions = treatment(captions)
-
-        for caption in webvtt.read(subtitle_file):
-            caption.text = caption.text.replace("\n", "")
-            lrc += f"[{caption.start}]{caption.text}\n"
-
-        mp3 = eyed3.load(filepath)
+        # Load the mp3 file
+        mp3 = eyed3.load(info.get("filepath"))
         if mp3 is None:
             raise yt_dlp.utils.PostProcessingError("Failed to load file")
 
@@ -62,13 +54,35 @@ class AddLyricsPP(yt_dlp.postprocessor.PostProcessor):
 
         assert mp3.tag is not None
 
-        mp3.tag.lyrics.set(lrc)
+        def add_lyrics(lang: str, sub_file: str, no_header: bool = False):
+            # transform vtt to lrc
+            lrc = ""
+            if not no_header:
+                lrc = "[offset: +00:00.00]\n\n"
+
+            vtt = webvtt.read(sub_file)
+            captions = vtt.captions
+
+            for treatment in SpecialTreatments.get_treatment(info.get("id")):
+                captions = treatment(captions)
+
+            for caption in captions:
+                caption.text = caption.text.replace("\n", "")
+                start = ":".join(caption.start.split(":")[1:]).split(".")
+                lrc += f"[{f'{start[0]}.{start[1][:2]}'}]{caption.text}\n"
+
+            mp3.tag.lyrics.set(lrc, lang=lang.encode("ascii"))
+
+        no_header = False
+        for lang, sub_file in subs:
+            add_lyrics(lang, sub_file, no_header=no_header)
+            no_header = True
 
         mp3.tag.save()
 
         self.to_screen("Subtitles added!")
 
-        return [subtitle_file], info
+        return [sub[1] for sub in subs], info
 
 
 class SpecialTreatments:
