@@ -115,7 +115,7 @@ if bypass_already_downloaded or len(cached_video_ids) != len(
     need_to_download = playlist_video_ids
     # new or removed videos
     if not bypass_already_downloaded:
-        need_to_download = filter_mp3(playlist_video_ids, output_dir)
+        need_to_download = filter_videos(playlist_video_ids, output_dir)
 
     if len(need_to_download) == 0:
         print("No new videos to download")
