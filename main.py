@@ -29,7 +29,10 @@ no_subtitle = os.getenv("NO_SUBTITLE", "false").lower() == "true"
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--playlist-id", help="Playlist ID", default=playlist_id)
-parser.add_argument("output_dir", help="Output directory", default=output_dir)
+parser.add_argument("output_dir",
+                    help="Output directory",
+                    nargs="?",
+                    default=output_dir)
 parser.add_argument("--no-check-downloaded",
                     help="Bypass already downloaded videos",
                     action="store_true")

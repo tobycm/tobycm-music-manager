@@ -14,7 +14,10 @@ dotenv.load_dotenv()
 output_dir = os.getenv("OUTPUT_DIR", "~/Music/")
 
 parser = argparse.ArgumentParser()
-parser.add_argument("output_dir", help="Output directory", default=output_dir)
+parser.add_argument("output_dir",
+                    help="Output directory",
+                    nargs="?",
+                    default=output_dir)
 
 args = parser.parse_args()
 
