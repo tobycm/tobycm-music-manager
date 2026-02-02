@@ -1,6 +1,8 @@
 import argparse
 import os
+import sys
 import time
+from pprint import pprint
 
 import dotenv
 import yt_dlp
@@ -40,16 +42,31 @@ parser.add_argument("--no-subtitle",
                     help="Don't download subtitles",
                     action="store_true")
 
-args = parser.parse_args()
+args, unknown_args = parser.parse_known_args()
 
 playlist_id = args.playlist_id
+
 output_dir = args.output_dir
+
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+if not os.path.isdir(output_dir):
+    raise ValueError(f"{output_dir} is not a directory")
+
 bypass_already_downloaded = args.no_check_downloaded
 no_subtitle = args.no_subtitle
 
-ytdlp_opts = {
+extra_args = yt_dlp.parse_options(unknown_args)
+
+ytdlp_opts = extra_args.ydl_opts
+
+# pprint(ytdlp_opts)
+
+toby_opts = {
     'ignoreerrors':
     True,
+    "concurrent_fragments":
+    2,
     'format':
     'ba',
     'outtmpl': {
@@ -74,12 +91,12 @@ ytdlp_opts = {
         'key': 'EmbedThumbnail',
         'already_have_thumbnail': False
     }],
-    'postprocessor_args': {
-        'embedthumbnail+ffmpeg_o': [
-            '-c:v', 'png', '-vf',
-            'pad=iw:max(iw\\,ih):(ow-iw)/2:(oh-ih)/2:color=0x000000,scale=max(iw\\,ih):max(iw\\,ih)'
-        ]
-    }
+    # 'postprocessor_args': {
+    #     'embedthumbnail+ffmpeg_o': [
+    #         '-c:v', 'png', '-vf',
+    #         'pad=iw:max(iw\\,ih):(ow-iw)/2:(oh-ih)/2:color=0x000000,scale=max(iw\\,ih):max(iw\\,ih)'
+    #     ]
+    # }
 }
 
 if not no_subtitle:
@@ -88,6 +105,11 @@ if not no_subtitle:
         'subtitlesformat': 'vtt',
         'writesubtitles': True
     })
+
+for k, v in toby_opts.items():
+    ytdlp_opts[k] = v
+
+# pprint(ytdlp_opts)
 
 playlist_video_ids = get_playlist_items(playlist_id, KEY)
 if not playlist_video_ids:
@@ -112,28 +134,36 @@ with open(".cache/playlist_video_ids.txt", "r") as f:
     else:
         cached_video_ids = f.read().splitlines()
 
-if bypass_already_downloaded or len(cached_video_ids) != len(
-        playlist_video_ids):
+pprint(ytdlp_opts)
 
-    need_to_download = playlist_video_ids
-    # new or removed videos
-    if not bypass_already_downloaded:
-        need_to_download = filter_videos(playlist_video_ids, output_dir)
+if (len(cached_video_ids)
+        == len(playlist_video_ids)) and not bypass_already_downloaded:
+    print("No new videos to download")
+    exit(0)
 
-    if len(need_to_download) == 0:
-        print("No new videos to download")
-        exit(0)
+need_to_download = playlist_video_ids
+# new or removed videos
+if not bypass_already_downloaded:
+    need_to_download = filter_videos(playlist_video_ids, output_dir)
 
-    # Download
-    print(f"Downloading {len(need_to_download)} songs...")
+print(f"Found {len(need_to_download)} new videos to download")
 
-    with yt_dlp.YoutubeDL(ytdlp_opts) as ydl:
-        if not no_subtitle:
-            ydl.add_post_processor(AddLyricsPP())
-        ydl.download(need_to_download)
+if len(need_to_download) == 0:
+    print("No new videos to download")
+    exit(0)
 
-    with open(".cache/playlist_video_ids.txt", "w") as f:  # save new ids
-        f.write(f"Timestamp: {int(time.time())}\n")
-        f.write("\n".join(playlist_video_ids))
+# Download
+print(f"Downloading {len(need_to_download)} songs...")
 
-    # subprocess.run(["sudo", "reboot"])
+need_to_download = need_to_download[::-1]
+
+with yt_dlp.YoutubeDL(ytdlp_opts) as ydl:
+    if not no_subtitle:
+        ydl.add_post_processor(AddLyricsPP())
+    ydl.download(need_to_download)
+
+with open(".cache/playlist_video_ids.txt", "w") as f:  # save new ids
+    f.write(f"Timestamp: {int(time.time())}\n")
+    f.write("\n".join(playlist_video_ids))
+
+# subprocess.run(["sudo", "reboot"])
