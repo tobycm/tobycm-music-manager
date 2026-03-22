@@ -1,5 +1,5 @@
 python-dotenv
 requests
 eyed3
-yt-dlp
+yt-dlp[default,curl-cffi,secretstorage]
 webvtt-py

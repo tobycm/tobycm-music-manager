@@ -80,7 +80,7 @@ toby_opts = {
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
-        'preferredquality': '5',
+        'preferredquality': '0',
         'nopostoverwrites': False
     }, {
         'key': 'FFmpegMetadata',
@@ -91,6 +91,8 @@ toby_opts = {
         'key': 'EmbedThumbnail',
         'already_have_thumbnail': False
     }],
+    'sponsorblock_remove': ['all'],
+
     # 'postprocessor_args': {
     #     'embedthumbnail+ffmpeg_o': [
     #         '-c:v', 'png', '-vf',
@@ -111,8 +113,25 @@ for k, v in toby_opts.items():
 
 # pprint(ytdlp_opts)
 
-playlist_video_ids = get_playlist_items(playlist_id, KEY)
-if not playlist_video_ids:
+playlist_video_ids = []
+
+try:
+    with open(".cache/playlist_video_ids.txt", "r") as f:
+        try:
+            timestamp = int(f.readline().strip("Timestamp: "))
+        except ValueError:
+            timestamp = 0
+        if time.time() - timestamp > 86400:  # 1 day
+            print("1 day passed since last fetch, cache invalidated")
+        else:
+            playlist_video_ids = f.read().splitlines()
+except FileNotFoundError:
+    pass
+
+if len(playlist_video_ids) == 0:
+    playlist_video_ids = get_playlist_items(playlist_id, KEY)
+
+if len(playlist_video_ids) == 0:
     raise ValueError("No video ids found in playlist")
 
 if not os.path.exists(".cache"):
@@ -122,24 +141,11 @@ with open(".cache/playlist_video_ids.txt",
           "a") as f:  # create file if it doesn't exist
     pass
 
-cached_video_ids = []
-
-with open(".cache/playlist_video_ids.txt", "r") as f:
-    try:
-        timestamp = int(f.readline().strip("Timestamp: "))
-    except ValueError:
-        timestamp = 0
-    if time.time() - timestamp > 86400:  # 1 day
-        print("1 day passed since last fetch, cache invalidated")
-    else:
-        cached_video_ids = f.read().splitlines()
-
 pprint(ytdlp_opts)
 
-if (len(cached_video_ids)
-        == len(playlist_video_ids)) and not bypass_already_downloaded:
-    print("No new videos to download")
-    exit(0)
+print(
+    f"Playlist size: {len(playlist_video_ids)} | Folder size: {len(os.listdir(output_dir))}"
+)
 
 need_to_download = playlist_video_ids
 # new or removed videos
