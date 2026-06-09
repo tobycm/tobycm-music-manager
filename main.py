@@ -1,6 +1,5 @@
 import argparse
 import os
-import sys
 import time
 from pprint import pprint
 
@@ -23,24 +22,26 @@ url = "https://youtube.googleapis.com/youtube/v3/playlistItems?playlistId=&part=
 
 playlist_id = os.getenv("PLAYLIST_ID", "PLSQmKW3jS_HRPnGo1cv9W6IH7Z_-3oAn_")
 
-bypass_already_downloaded = os.getenv("BYPASS_ALREADY_DOWNLOADED",
-                                      "false").lower() == "true"
+bypass_already_downloaded = (
+    os.getenv("BYPASS_ALREADY_DOWNLOADED", "false").lower() == "true"
+)
 
 no_subtitle = os.getenv("NO_SUBTITLE", "false").lower() == "true"
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--playlist-id", help="Playlist ID", default=playlist_id)
-parser.add_argument("output_dir",
-                    help="Output directory",
-                    nargs="?",
-                    default=output_dir)
-parser.add_argument("--no-check-downloaded",
-                    help="Bypass already downloaded videos",
-                    action="store_true")
-parser.add_argument("--no-subtitle",
-                    help="Don't download subtitles",
-                    action="store_true")
+parser.add_argument(
+    "--output_dir", help="Output directory", nargs="?", default=output_dir
+)
+parser.add_argument(
+    "--no-check-downloaded",
+    help="Bypass already downloaded videos",
+    action="store_true",
+)
+parser.add_argument(
+    "--no-subtitle", help="Don't download subtitles", action="store_true"
+)
 
 args, unknown_args = parser.parse_known_args()
 
@@ -63,36 +64,64 @@ ytdlp_opts = extra_args.ydl_opts
 # pprint(ytdlp_opts)
 
 toby_opts = {
-    'ignoreerrors':
-    True,
-    "concurrent_fragments":
-    2,
-    'format':
-    'ba',
-    'outtmpl': {
-        'default': f'{output_dir}/%(title)s [%(id)s].%(ext)s',
-        'pl_thumbnail': ''
+    "ignoreerrors": True,
+    "concurrent_fragments": 2,
+    "format": "ba",
+    "outtmpl": {
+        "default": f"{output_dir}/%(title)s [%(id)s].%(ext)s",
+        "pl_thumbnail": "",
     },
-    'writethumbnail':
-    True,
-    'final_ext':
-    'mp3',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '0',
-        'nopostoverwrites': False
-    }, {
-        'key': 'FFmpegMetadata',
-        'add_chapters': True,
-        'add_metadata': True,
-        'add_infojson': 'if_exists'
-    }, {
-        'key': 'EmbedThumbnail',
-        'already_have_thumbnail': False
-    }],
-    'sponsorblock_remove': ['all'],
-
+    "writethumbnail": True,
+    "final_ext": "mp3",
+    "postprocessors": [
+        {
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "0",
+            "nopostoverwrites": False,
+        },
+        {
+            "key": "FFmpegMetadata",
+            "add_chapters": True,
+            "add_metadata": True,
+            "add_infojson": "if_exists",
+        },
+        {"key": "EmbedThumbnail", "already_have_thumbnail": False},
+        {
+            "api": "https://sponsor.ajay.app",
+            "categories": {
+                "filler",
+                "hook",
+                "interaction",
+                "intro",
+                "music_offtopic",
+                "outro",
+                "preview",
+                "selfpromo",
+                "sponsor",
+            },
+            "key": "SponsorBlock",
+            "when": "after_filter",
+        },
+        {
+            "force_keyframes": True,
+            "key": "ModifyChapters",
+            "remove_chapters_patterns": [],
+            "remove_ranges": [],
+            "remove_sponsor_segments": {
+                "filler",
+                "hook",
+                "interaction",
+                "intro",
+                "music_offtopic",
+                "outro",
+                "preview",
+                "selfpromo",
+                "sponsor",
+            },
+            "sponsorblock_chapter_title": "[SponsorBlock]: %(category_names)l",
+        },
+    ],
     # 'postprocessor_args': {
     #     'embedthumbnail+ffmpeg_o': [
     #         '-c:v', 'png', '-vf',
@@ -102,11 +131,13 @@ toby_opts = {
 }
 
 if not no_subtitle:
-    ytdlp_opts.update({
-        'subtitleslangs': ['en', 'vi', 'jp'],
-        'subtitlesformat': 'vtt',
-        'writesubtitles': True
-    })
+    ytdlp_opts.update(
+        {
+            "subtitleslangs": ["en", "vi", "jp"],
+            "subtitlesformat": "vtt",
+            "writesubtitles": True,
+        }
+    )
 
 for k, v in toby_opts.items():
     ytdlp_opts[k] = v
@@ -137,8 +168,7 @@ if len(playlist_video_ids) == 0:
 if not os.path.exists(".cache"):
     os.mkdir(".cache")
 
-with open(".cache/playlist_video_ids.txt",
-          "a") as f:  # create file if it doesn't exist
+with open(".cache/playlist_video_ids.txt", "a") as f:  # create file if it doesn't exist
     pass
 
 pprint(ytdlp_opts)
